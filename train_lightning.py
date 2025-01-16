@@ -62,21 +62,27 @@ def main(args):
         else:
             print("チェックポイントが見つかりません。最初から学習を開始します。")
 
+    # 学習戦略の設定
+    strategy = "auto"
+    if args.num_process_per_node > 1:
+        strategy = DDPStrategy(
+            find_unused_parameters=False,
+            process_group_backend="nccl"
+        )
+
     trainer = pl.Trainer(
         max_epochs=args.num_epoch,
         accelerator="gpu" if torch.cuda.is_available() else "cpu",
         devices=args.num_process_per_node,
         num_nodes=args.num_proc_node,
-        strategy=DDPStrategy(
-            find_unused_parameters=False,
-            process_group_backend="nccl"
-        ) if args.num_process_per_node > 1 else None,
+        strategy=strategy,
         callbacks=callbacks,
         logger=logger,
         precision=32,
-        benchmark=True,
-        log_every_n_steps=100,
+        # deterministic=Trueの場合はbenchmark=Falseにする
+        benchmark=False if args.seed is not None else True,
         deterministic=True if args.seed is not None else False,
+        log_every_n_steps=100,
         gradient_clip_val=1.0,
     )
 
