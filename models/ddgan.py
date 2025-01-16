@@ -14,6 +14,7 @@ class DDGAN(pl.LightningModule):
         super().__init__()
         self.save_hyperparameters()
         self.args = args
+        self.automatic_optimization = False  # 手動最適化モードを有効化
         
         # Generator
         self.netG = NCSNpp(args)
@@ -64,59 +65,65 @@ class DDGAN(pl.LightningModule):
             return [opt_g, opt_d], [scheduler_g, scheduler_d]
         return [opt_g, opt_d]
 
-    def training_step(self, batch, batch_idx, optimizer_idx):
+    def training_step(self, batch, batch_idx):
+        opt_g, opt_d = self.optimizers()
+        
         real_data, _ = batch
         batch_size = real_data.size(0)
         t = torch.randint(0, self.args.num_timesteps, (batch_size,), device=self.device)
         
         # Train Discriminator
-        if optimizer_idx == 1:
-            x_t, x_tp1 = self.q_sample_pairs(self.coeff, real_data, t)
-            x_t.requires_grad = True
-            
-            # Real data
-            D_real = self.netD(x_t, t, x_tp1.detach()).view(-1)
-            errD_real = F.softplus(-D_real).mean()
-            
-            # R1 regularization
-            if self.args.lazy_reg is None or self.global_step % self.args.lazy_reg == 0:
-                grad_real = torch.autograd.grad(
-                    outputs=D_real.sum(),
-                    inputs=x_t,
-                    create_graph=True
-                )[0]
-                grad_penalty = (
-                    grad_real.view(grad_real.size(0), -1).norm(2, dim=1) ** 2
-                ).mean()
-                grad_penalty = self.args.r1_gamma / 2 * grad_penalty
-            else:
-                grad_penalty = 0
+        opt_d.zero_grad()
+        x_t, x_tp1 = self.q_sample_pairs(self.coeff, real_data, t)
+        x_t.requires_grad = True
+        
+        # Real data
+        D_real = self.netD(x_t, t, x_tp1.detach()).view(-1)
+        errD_real = F.softplus(-D_real).mean()
+        
+        # R1 regularization
+        if self.args.lazy_reg is None or self.global_step % self.args.lazy_reg == 0:
+            grad_real = torch.autograd.grad(
+                outputs=D_real.sum(),
+                inputs=x_t,
+                create_graph=True
+            )[0]
+            grad_penalty = (
+                grad_real.view(grad_real.size(0), -1).norm(2, dim=1) ** 2
+            ).mean()
+            grad_penalty = self.args.r1_gamma / 2 * grad_penalty
+        else:
+            grad_penalty = 0
 
-            # Fake data
-            latent_z = torch.randn(batch_size, self.args.nz, device=self.device)
-            x_0_predict = self.netG(x_tp1.detach(), t, latent_z)
-            x_pos_sample = self.sample_posterior(self.pos_coeff, x_0_predict, x_tp1, t)
-            
-            output = self.netD(x_pos_sample.detach(), t, x_tp1.detach()).view(-1)
-            errD_fake = F.softplus(output).mean()
-            
-            errD = errD_real + errD_fake + grad_penalty
-            self.log('train/d_loss', errD, on_step=True, on_epoch=True)
-            return errD
+        # Fake data
+        latent_z = torch.randn(batch_size, self.args.nz, device=self.device)
+        x_0_predict = self.netG(x_tp1.detach(), t, latent_z)
+        x_pos_sample = self.sample_posterior(self.pos_coeff, x_0_predict, x_tp1, t)
+        
+        output = self.netD(x_pos_sample.detach(), t, x_tp1.detach()).view(-1)
+        errD_fake = F.softplus(output).mean()
+        
+        errD = errD_real + errD_fake + grad_penalty
+        self.manual_backward(errD)
+        opt_d.step()
+        
+        self.log('train/d_loss', errD, on_step=True, on_epoch=True)
 
         # Train Generator
-        if optimizer_idx == 0:
-            latent_z = torch.randn(batch_size, self.args.nz, device=self.device)
-            x_t, x_tp1 = self.q_sample_pairs(self.coeff, real_data, t)
-            
-            x_0_predict = self.netG(x_tp1.detach(), t, latent_z)
-            x_pos_sample = self.sample_posterior(self.pos_coeff, x_0_predict, x_tp1, t)
-            
-            output = self.netD(x_pos_sample, t, x_tp1.detach()).view(-1)
-            errG = F.softplus(-output).mean()
-            
-            self.log('train/g_loss', errG, on_step=True, on_epoch=True)
-            return errG
+        opt_g.zero_grad()
+        latent_z = torch.randn(batch_size, self.args.nz, device=self.device)
+        x_t, x_tp1 = self.q_sample_pairs(self.coeff, real_data, t)
+        
+        x_0_predict = self.netG(x_tp1.detach(), t, latent_z)
+        x_pos_sample = self.sample_posterior(self.pos_coeff, x_0_predict, x_tp1, t)
+        
+        output = self.netD(x_pos_sample, t, x_tp1.detach()).view(-1)
+        errG = F.softplus(-output).mean()
+        
+        self.manual_backward(errG)
+        opt_g.step()
+        
+        self.log('train/g_loss', errG, on_step=True, on_epoch=True)
 
     def q_sample_pairs(self, coeff, x_start, t):
         return q_sample_pairs(coeff, x_start, t)

@@ -1,3 +1,11 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+DDGAN (Denoising Diffusion GAN) Training Script
+PyTorch Lightning implementation for training DDGAN models.
+"""
+
 import os
 import argparse
 import torch
@@ -45,20 +53,29 @@ def main(args):
     )
 
     # トレーナーの設定
+    # チェックポイントパスの設定
+    ckpt_path = None
+    if args.resume:
+        ckpt_dir = f"./saved_info/dd_gan/{args.dataset}/{args.exp}"
+        if os.path.exists(os.path.join(ckpt_dir, "last.ckpt")):
+            ckpt_path = os.path.join(ckpt_dir, "last.ckpt")
+        else:
+            print("チェックポイントが見つかりません。最初から学習を開始します。")
+
     trainer = pl.Trainer(
         max_epochs=args.num_epoch,
         accelerator="gpu" if torch.cuda.is_available() else "cpu",
         devices=args.num_process_per_node,
-        strategy=DDPStrategy(find_unused_parameters=False) if args.num_process_per_node > 1 else "auto",
+        strategy=DDPStrategy(find_unused_parameters=False) if args.num_process_per_node > 1 else None,
         callbacks=callbacks,
         logger=logger,
-        precision=32,
+        precision="bf16-mixed",
         benchmark=True,
         log_every_n_steps=100,
     )
 
     # トレーニングの実行
-    trainer.fit(model, datamodule=datamodule)
+    trainer.fit(model, datamodule=datamodule, ckpt_path=ckpt_path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser('DDGAN training')
