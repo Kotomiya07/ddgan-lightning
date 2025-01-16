@@ -90,7 +90,7 @@ def main(args):
         strategy=strategy,
         callbacks=callbacks,
         logger=logger,
-        precision=32,
+        precision=args.precision,
         # deterministic=Trueの場合はbenchmark=Falseにする
         benchmark=False if args.seed is not None else True,
         deterministic=True if args.seed is not None else False,
@@ -111,6 +111,7 @@ if __name__ == "__main__":
     parser.add_argument('--exp', required=True, help='experiment name')
     parser.add_argument('--dataset', default='cifar10', help='dataset name')
     parser.add_argument('--resume', action='store_true', default=False)
+    parser.add_argument('--precision', type=str, default=16, help='precision for training')
 
     # モデルの設定
     parser.add_argument('--image_size', type=int, default=32, help='size of image')
