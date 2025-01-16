@@ -35,8 +35,12 @@ class DDGAN(pl.LightningModule):
                 act=nn.LeakyReLU(0.2)
             )
         
-        # Initialize diffusion coefficients
+        # Time scheduleの登録（デバイスに依存しない部分）
         self.register_buffer('T', self.get_time_schedule())
+
+    def setup(self, stage=None):
+        """モデルのセットアップ時にデバイスが確定した後で拡散係数を初期化"""
+        super().setup(stage)
         self.coeff = self.init_diffusion_coefficients()
         self.pos_coeff = self.init_posterior_coefficients()
 

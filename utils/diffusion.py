@@ -47,8 +47,9 @@ class DiffusionCoefficients:
         """σスケジュールを計算"""
         eps_small = 1e-3
         
-        t = torch.linspace(0, 1, self.num_timesteps + 1, device=self.device)
+        t = torch.linspace(0, 1, self.num_timesteps + 1)
         t = t * (1. - eps_small) + eps_small
+        t = t.to(self.device)
         
         if self.use_geometric:
             var = var_func_geometric(t, self.beta_min, self.beta_max)
@@ -58,7 +59,7 @@ class DiffusionCoefficients:
         alpha_bars = 1.0 - var
         betas = 1 - alpha_bars[1:] / alpha_bars[:-1]
         
-        first = torch.tensor(1e-8, device=self.device)
+        first = torch.tensor(1e-8).to(self.device)
         betas = torch.cat((first[None], betas))
         sigmas = betas**0.5
         a_s = torch.sqrt(1-betas)
@@ -73,13 +74,15 @@ class PosteriorCoefficients:
             args: 設定パラメータ
             device: 計算に使用するデバイス
         """
-        _, _, self.betas = DiffusionCoefficients(args, device)._get_sigma_schedule()
+        self.device = device
+        diff_coeff = DiffusionCoefficients(args, device)
+        _, _, betas = diff_coeff._get_sigma_schedule()
         
         # 最初のβを除外
-        self.betas = self.betas[1:]
+        self.betas = betas[1:]
         
-        # 各種係数を計算
-        self.alphas = 1 - self.betas
+        # 各種係数を計算（すべてデバイス上で）
+        self.alphas = (1 - self.betas).to(device)
         self.alphas_cumprod = torch.cumprod(self.alphas, 0)
         self.alphas_cumprod_prev = torch.cat(
             (torch.tensor([1.], device=device), self.alphas_cumprod[:-1]), 0

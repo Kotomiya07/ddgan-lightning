@@ -66,12 +66,18 @@ def main(args):
         max_epochs=args.num_epoch,
         accelerator="gpu" if torch.cuda.is_available() else "cpu",
         devices=args.num_process_per_node,
-        strategy=DDPStrategy(find_unused_parameters=False) if args.num_process_per_node > 1 else "auto",
+        num_nodes=args.num_proc_node,
+        strategy=DDPStrategy(
+            find_unused_parameters=False,
+            process_group_backend="nccl"
+        ) if args.num_process_per_node > 1 else None,
         callbacks=callbacks,
         logger=logger,
-        precision="bf16-mixed",
+        precision=32,
         benchmark=True,
         log_every_n_steps=100,
+        deterministic=True if args.seed is not None else False,
+        gradient_clip_val=1.0,
     )
 
     # トレーニングの実行
