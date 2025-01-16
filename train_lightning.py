@@ -83,7 +83,6 @@ def main(args):
         benchmark=False if args.seed is not None else True,
         deterministic=True if args.seed is not None else False,
         log_every_n_steps=100,
-        gradient_clip_val=1.0,
     )
 
     # トレーニングの実行
