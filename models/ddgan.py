@@ -109,8 +109,11 @@ class DDGAN(pl.LightningModule):
         
         errD = errD_real + errD_fake + grad_penalty
         self.manual_backward(errD)
-        opt_d.step()
         
+        # 手動での勾配クリッピング
+        torch.nn.utils.clip_grad_norm_(self.netD.parameters(), max_norm=1.0)
+        
+        opt_d.step()
         self.log('train/d_loss', errD, on_step=True, on_epoch=True)
 
         # Train Generator
@@ -125,8 +128,11 @@ class DDGAN(pl.LightningModule):
         errG = F.softplus(-output).mean()
         
         self.manual_backward(errG)
-        opt_g.step()
         
+        # 手動での勾配クリッピング
+        torch.nn.utils.clip_grad_norm_(self.netG.parameters(), max_norm=1.0)
+        
+        opt_g.step()
         self.log('train/g_loss', errG, on_step=True, on_epoch=True)
 
     def q_sample_pairs(self, coeff, x_start, t):
