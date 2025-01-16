@@ -66,7 +66,7 @@ def main(args):
         max_epochs=args.num_epoch,
         accelerator="gpu" if torch.cuda.is_available() else "cpu",
         devices=args.num_process_per_node,
-        strategy=DDPStrategy(find_unused_parameters=False) if args.num_process_per_node > 1 else None,
+        strategy=DDPStrategy(find_unused_parameters=False) if args.num_process_per_node > 1 else "auto",
         callbacks=callbacks,
         logger=logger,
         precision="bf16-mixed",
