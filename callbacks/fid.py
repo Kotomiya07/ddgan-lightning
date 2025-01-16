@@ -3,7 +3,7 @@ import numpy as np
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import Callback
 from pytorch_fid.inception import InceptionV3
-from pytorch_fid.fid_score import calculate_statistics_given_paths
+from pytorch_fid.fid_score import calculate_fid_given_paths
 from torchvision.utils import save_image
 from tqdm import tqdm
 import scipy.linalg
@@ -49,7 +49,7 @@ class FIDCallback(Callback):
             data = np.load(stats_path)
             m1, s1 = data['mu'], data['sigma']
         else:
-            m1, s1 = calculate_statistics_given_paths(
+            m1, s1 = calculate_fid_given_paths(
                 [self.real_path],
                 self.batch_size,
                 self.device,
@@ -59,7 +59,7 @@ class FIDCallback(Callback):
             np.savez(stats_path, mu=m1, sigma=s1)
         
         # 生成画像の統計値を計算
-        m2, s2 = calculate_statistics_given_paths(
+        m2, s2 = calculate_fid_given_paths(
             [samples_dir],
             self.batch_size,
             self.device,
