@@ -17,6 +17,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from models.ddgan import DDGAN
 from data.datasets import DDGANDataModule
 from callbacks.ema import EMACallback
+from callbacks.fid import FIDCallback
 
 def main(args):
     # シード設定
@@ -32,9 +33,9 @@ def main(args):
     callbacks = [
         ModelCheckpoint(
             dirpath=f"./saved_info/dd_gan/{args.dataset}/{args.exp}",
-            filename="{epoch}",
+            filename="epoch_{epoch}",
             save_top_k=2,
-            monitor="train/g_loss",
+            monitor="metrics/fid",
             mode="min",
             save_last=True,
             every_n_epochs=args.save_ckpt_every
@@ -44,6 +45,17 @@ def main(args):
 
     if args.use_ema:
         callbacks.append(EMACallback(decay=args.ema_decay))
+    
+    # FID計算用のコールバック
+    if args.calc_fid:
+        callbacks.append(
+            FIDCallback(
+                dataset=args.dataset,
+                real_path=args.real_path,
+                n_samples=args.n_fid_samples,
+                batch_size=args.batch_size
+            )
+        )
 
     # ロガーの設定
     logger = TensorBoardLogger(
@@ -93,6 +105,9 @@ if __name__ == "__main__":
     
     # 基本的な設定
     parser.add_argument('--seed', type=int, default=42, help='random seed')
+    parser.add_argument('--calc_fid', action='store_true', help='calculate FID score during training')
+    parser.add_argument('--real_path', type=str, help='path to real images for FID calculation (required for non-CIFAR10 datasets)')
+    parser.add_argument('--n_fid_samples', type=int, default=50000, help='number of samples for FID calculation')
     parser.add_argument('--exp', required=True, help='experiment name')
     parser.add_argument('--dataset', default='cifar10', help='dataset name')
     parser.add_argument('--resume', action='store_true', default=False)
