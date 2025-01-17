@@ -50,9 +50,9 @@ class FIDCallback(Callback):
             m1, s1 = data['mu'], data['sigma']
         else:
             m1, s1 = compute_statistics_of_path(
-                [self.real_path],
-                self.batch_size,
-                self.device,
+                path=self.real_path,
+                batch_size=self.batch_size,
+                device=self.device,
                 dims=2048,
                 model=self.inception
             )
@@ -60,9 +60,9 @@ class FIDCallback(Callback):
         
         # 生成画像の統計値を計算
         m2, s2 = compute_statistics_of_path(
-            [samples_dir],
-            self.batch_size,
-            self.device,
+            path=samples_dir,
+            batch_size=self.batch_size,
+            device=self.device,
             dims=2048,
             model=self.inception
         )
