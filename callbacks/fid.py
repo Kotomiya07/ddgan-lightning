@@ -5,6 +5,7 @@ from pytorch_lightning.callbacks import Callback
 from pytorch_fid.inception import InceptionV3
 from pytorch_fid.fid_score import compute_statistics_of_path
 from torchvision.utils import save_image
+import torchvision.transforms as transforms
 from tqdm import tqdm
 import scipy.linalg
 import torch
@@ -37,7 +38,7 @@ class FIDCallback(Callback):
                 self.real_path = "./data/cifar10/train"
                 if not os.path.exists(self.real_path):
                     from torchvision.datasets import CIFAR10
-                    dataset = CIFAR10(root="./data", train=True, download=True)
+                    dataset = CIFAR10(root="./data", train=True, download=True, transform=transforms.ToTensor())
                     dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False)
                     os.makedirs(self.real_path, exist_ok=True)
                     for i, (x, _) in enumerate(dataloader):
