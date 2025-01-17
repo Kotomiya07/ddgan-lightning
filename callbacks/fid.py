@@ -38,7 +38,7 @@ class FIDCallback(Callback):
                 if not os.path.exists(self.real_path):
                     from torchvision.datasets import CIFAR10
                     dataset = CIFAR10(root="./data", train=True, download=True)
-                    dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, suffle=False)
+                    dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False)
                     os.makedirs(self.real_path, exist_ok=True)
                     for i, (x, _) in enumerate(dataloader):
                         save_image(x, os.path.join(self.real_path, f"{i:06d}.png"))
