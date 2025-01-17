@@ -37,7 +37,11 @@ class FIDCallback(Callback):
                 self.real_path = "./data/cifar10/train"
                 if not os.path.exists(self.real_path):
                     from torchvision.datasets import CIFAR10
-                    CIFAR10(root="./data", train=True, download=True)
+                    dataset = CIFAR10(root="./data", train=True, download=True)
+                    dataloader = torch.utils.DataLoader(dataset, batch_size=1, suffle=False)
+                    os.makedirs(self.real_path, exist_ok=True)
+                    for i, (x, _) in enumerate(dataloader):
+                        save_image(x, os.path.join(self.real_path, f"{i:06d}.png"))
             elif not self.real_path:
                 raise ValueError("For datasets other than CIFAR10, real_path must be specified")
 
@@ -106,7 +110,7 @@ class FIDCallback(Callback):
         """チェックポイント保存時にFIDを計算"""
         if trainer.is_global_zero:  # メインプロセスでのみ実行
             # サンプル生成用ディレクトリ
-            samples_dir = os.path.join(trainer.logger.log_dir, f"samples_epoch_{trainer.current_epoch}")
+            samples_dir = "./generated_samples/{}".format("cifar10")
             os.makedirs(samples_dir, exist_ok=True)
             
             # サンプル生成

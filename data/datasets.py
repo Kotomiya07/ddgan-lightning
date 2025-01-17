@@ -25,13 +25,13 @@ class DDGANDataModule(pl.LightningDataModule):
                 transforms.ToTensor(),
                 transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
             ])
-            self.train_dataset = CIFAR10('./data', train=True, transform=transform, download=True)
-            self.val_dataset = CIFAR10('./data', train=False, transform=transform, download=True)
+            self.train_dataset = CIFAR10('./data/cifar10', train=True, transform=transform, download=True)
+            self.val_dataset = CIFAR10('./data/cifar10', train=False, transform=transform, download=True)
 
         elif self.dataset_name == 'stackmnist':
             train_transform, valid_transform = _data_transforms_stacked_mnist()
-            self.train_dataset = StackedMNIST(root='./data', train=True, download=True, transform=train_transform)
-            self.val_dataset = StackedMNIST(root='./data', train=False, download=True, transform=valid_transform)
+            self.train_dataset = StackedMNIST(root='./data/stackmnist', train=True, download=True, transform=train_transform)
+            self.val_dataset = StackedMNIST(root='./data/stackmnist', train=False, download=True, transform=valid_transform)
 
         elif self.dataset_name == 'lsun':
             transform = transforms.Compose([
@@ -42,7 +42,7 @@ class DDGANDataModule(pl.LightningDataModule):
                 transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
             ])
             
-            train_data = LSUN(root='/datasets/LSUN/', classes=['church_outdoor_train'], transform=transform)
+            train_data = LSUN(root='/data/lsun/', classes=['church_outdoor_train'], transform=transform)
             subset = list(range(0, 120000))
             self.train_dataset = torch.utils.data.Subset(train_data, subset)
             # LSUNはテストセットが提供されていないため、訓練データの一部を検証用として使用
@@ -61,8 +61,8 @@ class DDGANDataModule(pl.LightningDataModule):
                 transforms.ToTensor(),
                 transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
             ])
-            self.train_dataset = LMDBDataset(root='/datasets/celeba-lmdb/', name='celeba', train=True, transform=transform)
-            self.val_dataset = LMDBDataset(root='/datasets/celeba-lmdb/', name='celeba', train=False, transform=transform)
+            self.train_dataset = LMDBDataset(root='/data/celeba-lmdb/', name='celeba', train=True, transform=transform)
+            self.val_dataset = LMDBDataset(root='/data/celeba-lmdb/', name='celeba', train=False, transform=transform)
             
     def train_dataloader(self):
         return DataLoader(
