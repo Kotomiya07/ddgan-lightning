@@ -49,7 +49,7 @@ class FIDCallback(Callback):
     def calculate_fid(self, pl_module, samples_dir):
         """FIDスコアを計算"""
         # 実データの統計値を計算
-        stats_path = os.path.join("./data/cifar10", "real_stats.npy")
+        stats_path = os.path.join("./data/cifar10", "real_stats.npz")
         if os.path.exists(stats_path):
             data = np.load(stats_path)
             m1, s1 = data['mu'], data['sigma']
@@ -61,7 +61,7 @@ class FIDCallback(Callback):
                 dims=2048,
                 model=self.inception
             )
-            np.savez(stats_path, mu=m1, sigma=s1)
+            np.savez(stats_path.split(".")[:-1], mu=m1, sigma=s1)
         
         # 生成画像の統計値を計算
         m2, s2 = compute_statistics_of_path(

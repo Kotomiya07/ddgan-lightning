@@ -39,7 +39,7 @@ def main(args):
         ModelCheckpoint(
             dirpath=f"./saved_info/dd_gan/{args.dataset}/{args.exp}",
             filename="epoch_{epoch}",
-            save_top_k=2,
+            save_top_k=5,
             monitor="metrics/fid",
             mode="min",
             save_last=True,
