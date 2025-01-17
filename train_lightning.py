@@ -20,6 +20,11 @@ from callbacks.ema import EMACallback
 from callbacks.fid import FIDCallback
 
 def main(args):
+    # 精度と高速化のための設定
+    torch.set_float32_matmul_precision('high')
+    torch.backends.cudnn.benchmark = True
+    torch.backends.cudnn.deterministic = False
+
     # シード設定
     pl.seed_everything(args.seed)
 

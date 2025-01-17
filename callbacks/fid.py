@@ -38,7 +38,7 @@ class FIDCallback(Callback):
                 self.real_path = "./data/cifar10/train"
                 if not os.path.exists(self.real_path):
                     from torchvision.datasets import CIFAR10
-                    dataset = CIFAR10(root="./data", train=True, download=True, transform=transforms.ToTensor())
+                    dataset = CIFAR10(root="./data/cifar10", train=True, download=True, transform=transforms.ToTensor())
                     dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False)
                     os.makedirs(self.real_path, exist_ok=True)
                     for i, (x, _) in enumerate(dataloader):
@@ -49,7 +49,7 @@ class FIDCallback(Callback):
     def calculate_fid(self, pl_module, samples_dir):
         """FIDスコアを計算"""
         # 実データの統計値を計算
-        stats_path = os.path.join(pl_module.logger.experiment.log_dir, "real_stats.npy")
+        stats_path = os.path.join("./data/cifar10", "real_stats.npy")
         if os.path.exists(stats_path):
             data = np.load(stats_path)
             m1, s1 = data['mu'], data['sigma']
